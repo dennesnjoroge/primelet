@@ -1,4 +1,5 @@
 import { appError } from "../../utils/error.js";
+import { registrationService } from "./auth.service.js";
 export const testController = (req, res) => {
   return res.status(200).json({ status: "success" });
 };
@@ -10,11 +11,12 @@ export const login = (req, res, next) => {
   }
 };
 
-export const register = (req, res, next) => {
+export const register = async (req, res, next) => {
   try {
-    const data = req.body || {};
+    // registrationData contains firstName, lastName, emailAddress, phoneNumber & password
+    const registrationData = req.body;
 
-    console.log(data);
+    await registrationService(registrationData);
 
     return res
       .status(200)
