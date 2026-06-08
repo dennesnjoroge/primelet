@@ -1,6 +1,51 @@
 import bcrypt from "bcrypt";
 import pool from "../../config/db.js";
 import { appError } from "../../utils/error.js";
+import { signAccessToken, signRefreshToken } from "../../utils/tokens.js";
+
+export const loginService = async (loginData) => {
+  /**
+   * LOGIN SERVICE WORKFLOW
+   * - check if identifier(emailAddress) exists in db
+   * - if emailAddress does not exist, throw an error(unauthorized)
+   * -else compare submitted password with stored password(in DB)
+   * -if they match, return access token
+   * -else throw error
+   */
+
+  try {
+    //destructure login data
+    const { emailAddress, password } = loginData;
+
+    // check if email exists
+    const [emailRows] = await pool.execute(
+      `SELECT id, password_hash FROM users WHERE email_address = ?`,
+      [emailAddress],
+    );
+
+    if (emailRows.length === 0) {
+      throw appError("Invalid email or password", 401);
+    }
+
+    const user = emailRows[0];
+
+    // compare passwords
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+
+    if (!isPasswordValid) {
+      throw appError("Invalid email or password", 401);
+    }
+
+    // generate JWT access + refresh tokens
+    const accessToken = signAccessToken(user.id);
+    const refreshToken = signRefreshToken(user.id);
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const registrationService = async (registrationData) => {
   /**
    * DEV WORKFLOW NOTES
