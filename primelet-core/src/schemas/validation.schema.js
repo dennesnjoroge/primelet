@@ -1,6 +1,11 @@
 import { z } from "zod";
 import parsePhoneNumberFromString from "libphonenumber-js";
 
+export const loginSchema = z.object({
+  emailAddress: z.string().email("Invalid email address").toLowerCase(),
+  password: z.string().min(1, "Password cannot be empty"),
+});
+
 export const signupSchema = z.object({
   firstName: z.string().trim().min(1, "Firstname is required"),
   lastName: z.string().trim().min(1, "Lastname is required"),

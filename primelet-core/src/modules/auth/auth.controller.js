@@ -6,6 +6,10 @@ export const testController = (req, res) => {
 
 export const login = (req, res, next) => {
   try {
+    return res.status(200).json({
+      status: "success",
+      message: "Login was successful",
+    });
   } catch (error) {
     next(error);
   }
