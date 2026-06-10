@@ -1,10 +1,7 @@
 import { appError } from "../../utils/error.js";
 import { loginService, registrationService } from "./auth.service.js";
-export const testController = (req, res) => {
-  return res.status(200).json({ status: "success" });
-};
 
-export const login = async (req, res, next) => {
+const login = async (req, res, next) => {
   try {
     //logindata contains emailAddress, password
     const loginData = req.body;
@@ -34,7 +31,7 @@ export const login = async (req, res, next) => {
   }
 };
 
-export const register = async (req, res, next) => {
+const register = async (req, res, next) => {
   try {
     // registrationData contains firstName, lastName, emailAddress, phoneNumber & password
     const registrationData = req.body;
@@ -48,3 +45,5 @@ export const register = async (req, res, next) => {
     next(error);
   }
 };
+
+export default { login, register };

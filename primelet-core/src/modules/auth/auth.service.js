@@ -1,7 +1,12 @@
 import bcrypt from "bcrypt";
 import pool from "../../config/db.js";
 import { appError } from "../../utils/error.js";
-import { signAccessToken, signRefreshToken } from "../../utils/tokens.js";
+import { sendVerificationMail } from "../../services/email.service.js";
+import {
+  signAccessToken,
+  signRefreshToken,
+  generateVerificationToken,
+} from "../../utils/tokens.js";
 
 export const loginService = async (loginData) => {
   /**
@@ -87,12 +92,23 @@ export const registrationService = async (registrationData) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Store user info in DB
-    await connection.execute(
+    const [result] = await connection.execute(
       `INSERT INTO users (first_name, last_name, email_address, phone_number, password_hash) VALUES (?, ?, ?, ?, ?)`,
       [firstName, lastName, emailAddress, phoneNumber, hashedPassword],
     );
 
+    // verification token
+    const { token, expiresAt } = generateVerificationToken();
+
+    const tokenHash = await bcrypt.hash(token, 10);
+
+    await connection.execute(
+      `INSERT INTO verification_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)`,
+      [result.insertId, tokenHash, expiresAt],
+    );
+
     await connection.commit();
+    sendVerificationMail(emailAddress, token);
   } catch (error) {
     await connection.rollback();
     throw error;

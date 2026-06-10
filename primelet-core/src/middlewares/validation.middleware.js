@@ -1,7 +1,7 @@
 import { ZodError } from "zod";
 import { appError } from "../utils/error.js";
 
-export const validateLoginData = (loginSchema) => {
+const login = (loginSchema) => {
   return (req, res, next) => {
     try {
       const { emailAddress, password } = req.body || {};
@@ -28,7 +28,7 @@ export const validateLoginData = (loginSchema) => {
   };
 };
 
-export const validateRegData = (registrationSchema) => {
+const register = (registrationSchema) => {
   return (req, res, next) => {
     try {
       const { firstName, lastName, emailAddress, phoneNumber, password } =
@@ -65,3 +65,5 @@ export const validateRegData = (registrationSchema) => {
     }
   };
 };
+
+export default { login, register };
