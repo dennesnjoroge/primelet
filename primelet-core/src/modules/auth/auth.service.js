@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import pool from "../../config/db.js";
 import utils from "../../utils/utils.js";
+import emailService from "../../services/email.service.js";
 import { sendVerificationMail } from "../../services/email.service.js";
 
 const login = async (loginData) => {
@@ -103,7 +104,7 @@ const register = async (registrationData) => {
     );
 
     await connection.commit();
-    sendVerificationMail(emailAddress, token);
+    emailService.verifyEmail(emailAddress, `${firstName} ${lastName}`, token);
   } catch (error) {
     await connection.rollback();
     throw error;
