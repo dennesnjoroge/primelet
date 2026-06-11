@@ -1,6 +1,5 @@
 // zod schema
 import { z } from "zod";
-import parsePhoneNumberFromString from "libphonenumber-js";
 
 const login = z.object({
   emailAddress: z
