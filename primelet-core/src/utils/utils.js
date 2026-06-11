@@ -30,10 +30,11 @@ const decodeRegistrationToken = (registrationToken) => {
 };
 
 const generateVerificationToken = () => {
-  const token = crypto.randomBytes(32).toString("hex");
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const verificationTokenHash = crypto.hash("sha256", verificationToken, "hex");
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-  return { token, expiresAt };
+  return { verificationToken, verificationTokenHash, expiresAt };
 };
 
 export default {

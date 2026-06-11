@@ -52,16 +52,6 @@ const verifyEmail = (verifyEmailSchema) => {
       const validVerificationToken = verifyEmailSchema.parse(req.body);
       req.body = validVerificationToken;
 
-      // extract userId from registrationToken
-      const registrationToken = req.cookies._regt;
-
-      if (!registrationToken) {
-        throw utils.appError("Invalid or expired verification session.", 400);
-      }
-
-      const userId = utils.decodeRegistrationToken(registrationToken);
-
-      req.user = { userId };
       next();
     } catch (error) {
       if (error instanceof ZodError) {

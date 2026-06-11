@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import pool from "../../config/db.js";
 import utils from "../../utils/utils.js";
 import emailService from "../../services/email.service.js";
@@ -47,14 +48,6 @@ const login = async (loginData) => {
 };
 
 const register = async (registrationData) => {
-  /**
-   * DEV WORKFLOW NOTES
-   * - Check if unique identifiers exist in db
-   * - If they exist, throw error
-   * - Otherwise create user account and save the data to DB
-   * - NOTES: Hash user password,
-   * - Send verification token to user via EMAIL
-   */
   const connection = await pool.getConnection();
 
   try {
@@ -84,22 +77,21 @@ const register = async (registrationData) => {
     const userId = result.insertId;
 
     // verification token
-    const { token, expiresAt } = utils.generateVerificationToken();
-
-    const tokenHash = await bcrypt.hash(token, 10);
+    const { verificationToken, verificationTokenHash, expiresAt } =
+      utils.generateVerificationToken();
 
     await connection.execute(
       `INSERT INTO verification_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)`,
-      [userId, tokenHash, expiresAt],
+      [userId, verificationTokenHash, expiresAt],
     );
 
     await connection.commit();
 
-    const registrationToken = utils.signRegistrationToken(userId);
-
-    emailService.verifyEmail(emailAddress, `${firstName} ${lastName}`, token);
-
-    return registrationToken;
+    emailService.verifyEmail(
+      emailAddress,
+      `${firstName} ${lastName}`,
+      verificationToken,
+    );
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -108,54 +100,77 @@ const register = async (registrationData) => {
   }
 };
 
-const verifyEmail = async (verificationToken, userId) => {
-  /**
-   * workflow
-   * -get stored hash using userId
-   * -compare the tokens
-   * -if success, mark email as verified
-   * -else throw error, exit
-   */
+const verifyEmail = async (verificationToken) => {
+  const connection = await pool.getConnection();
   try {
-    //get stored token hash
-    const [tokenRows] = await pool.execute(
-      `SELECT token_hash, expires_at FROM verification_tokens WHERE user_id = ?`,
-      [userId],
+    // initialize mysql transaction
+    await connection.beginTransaction();
+
+    //hash incoming verification token
+    const incomingHash = crypto.hash("sha256", verificationToken, "hex");
+
+    // lookup matching hash in db
+    const [tokenRows] = await connection.execute(
+      `SELECT user_id, expires_at FROM verification_tokens WHERE token_hash = ?`,
+      [incomingHash],
     );
 
-    const token = tokenRows[0];
-
-    if (!token) {
+    if (tokenRows.length === 0) {
       throw utils.appError(
         "Invalid or expired verification link. Please request a new one.",
         400,
       );
     }
 
-    // check if token is expired
-    if (new Date(token.expires_at).getTime() < Date.now()) {
+    const userId = tokenRows[0].user_id;
+    const tokenExpiry = tokenRows[0].expires_at;
+
+    // check if token has expired
+    if (new Date(tokenExpiry).getTime() < Date.now()) {
+      // clean expired token
+      await connection.execute(
+        `DELETE FROM verification_tokens WHERE user_id = ?`,
+        [userId],
+      );
+
       throw utils.appError(
-        "Your verification link has expired. Please request a new one.",
+        "Invalid or expired verification link. Please request a new one.",
         400,
       );
     }
 
-    const tokenValid = await bcrypt.compare(
-      verificationToken,
-      token.token_hash,
+    // check if email is already verified
+    const [users] = await connection.execute(
+      `SELECT email_verified FROM users WHERE id = ?`,
+      [userId],
     );
 
-    if (tokenValid) {
-      await pool.execute(`UPDATE users SET email_verified = ? WHERE id = ?`, [
-        1,
-        userId,
-      ]);
-    } else {
-      throw utils.appError("Invalid verification token", 400);
+    if (users[0]?.email_verified) {
+      return;
     }
+
+    // update verification status
+    await connection.execute(
+      `UPDATE users SET email_verified = ? WHERE id = ?`,
+      [1, userId],
+    );
+
+    // delete tokens
+    await connection.execute(
+      `DELETE FROM verification_tokens WHERE user_id = ?`,
+      [userId],
+    );
+
+    // commit db transaction
+    await connection.commit();
   } catch (error) {
+    await connection.rollback();
     throw error;
+  } finally {
+    connection.release();
   }
 };
+
+const resendVerifyEmail = async () => {};
 
 export default { login, register, verifyEmail };
