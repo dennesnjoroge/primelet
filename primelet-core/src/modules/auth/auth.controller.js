@@ -94,4 +94,34 @@ const resendVerifyEmail = async (req, res, next) => {
   }
 };
 
-export default { login, register, verifyEmail, resendVerifyEmail };
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { emailAddress } = req.body;
+
+    await authService.forgotPassword(emailAddress);
+
+    return res.status(201).json({
+      status: "success",
+      message:
+        "If an account with that email exists, a reset link has been sent",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default {
+  login,
+  register,
+  verifyEmail,
+  resendVerifyEmail,
+  forgotPassword,
+  resetPassword,
+};

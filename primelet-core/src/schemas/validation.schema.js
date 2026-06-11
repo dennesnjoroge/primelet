@@ -39,4 +39,11 @@ const verifyEmail = z.object({
     .min(1, "Verification token is required"),
 });
 
-export default { login, signup, verifyEmail };
+const forgotPassword = z.object({
+  emailAddress: z
+    .string({ error: "Email address is required" })
+    .email("Invalid email address")
+    .toLowerCase(),
+});
+
+export default { login, signup, verifyEmail, forgotPassword };

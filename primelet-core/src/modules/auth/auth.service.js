@@ -214,4 +214,42 @@ const resendVerifyEmail = async (userId) => {
   }
 };
 
-export default { login, register, verifyEmail, resendVerifyEmail };
+const forgotPassword = async (emailAddress) => {
+  try {
+    // check if email exists
+    const [rows] = await pool.execute(
+      `SELECT id, first_name, last_name FROM users WHERE email_address = ? `,
+      [emailAddress],
+    );
+
+    // return silently if user not found
+    if (rows.length === 0) {
+      return;
+    }
+
+    // destructure user details
+    const { id, first_name, last_name } = rows[0];
+
+    const { resetToken, resetTokenHash, expiresAt } =
+      utils.generateResetToken();
+
+    // store resettoken hash in db
+    await pool.execute(
+      `INSERT INTO reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE token_hash = VALUES(token_hash), expires_at = VALUES(expires_at)`,
+      [id, resetTokenHash, expiresAt],
+    );
+  } catch (error) {
+    throw error;
+  }
+};
+
+const resetPassword = async () => {};
+
+export default {
+  login,
+  register,
+  verifyEmail,
+  resendVerifyEmail,
+  forgotPassword,
+  resetPassword,
+};
