@@ -41,6 +41,16 @@ const login = async (loginData) => {
     const accessToken = utils.signAccessToken(user.id);
     const refreshToken = utils.signRefreshToken(user.id);
 
+    // hash refresh token
+    const refreshTokenHash = crypto.hash("sha256", refreshToken, "hex");
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // expires in 7 days
+
+    // store refresh token hash in db
+    await pool.execute(
+      `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE token_hash = VALUES(token_hash), expires_at = VALUES(expires_at)`,
+      [user.id, refreshTokenHash, expiresAt],
+    );
+
     return { accessToken, refreshToken };
   } catch (error) {
     throw error;
@@ -309,6 +319,10 @@ const resetPassword = async (resetToken, password) => {
   }
 };
 
+const logout = async (userId) => {};
+
+const refresh = async () => {};
+
 export default {
   login,
   register,
@@ -316,4 +330,6 @@ export default {
   resendVerifyEmail,
   forgotPassword,
   resetPassword,
+  logout,
+  refresh,
 };

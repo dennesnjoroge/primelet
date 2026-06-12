@@ -1,6 +1,7 @@
 import { Router } from "express";
 import authController from "./auth.controller.js";
 import validationMiddleware from "../../middlewares/validation.middleware.js";
+import authMiddleware from "../../middlewares/auth.middleware.js";
 import validationSchema from "../../schemas/validation.schema.js";
 
 const router = Router();
@@ -38,5 +39,9 @@ router.post(
   validationMiddleware.resetPassword(validationSchema.resetPassword),
   authController.resetPassword,
 );
+
+router.post("/logout", authMiddleware.auth(), authController.logout);
+
+router.post("/refresh", authController.refresh);
 
 export default router;

@@ -125,6 +125,23 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+const logout = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+
+    await authService.logout(userId);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Successfully logged out",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const refresh = async (req, res, next) => {};
+
 export default {
   login,
   register,
@@ -132,4 +149,6 @@ export default {
   resendVerifyEmail,
   forgotPassword,
   resetPassword,
+  logout,
+  refresh,
 };

@@ -29,6 +29,12 @@ const decodeRegistrationToken = (registrationToken) => {
   return decoded.sub;
 };
 
+const decodeAccessToken = (accessToken) => {
+  const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+
+  return decoded.sub;
+};
+
 const generateVerificationToken = () => {
   const verificationToken = crypto.randomBytes(32).toString("hex");
   const verificationTokenHash = crypto.hash("sha256", verificationToken, "hex");
@@ -51,6 +57,7 @@ export default {
   signRefreshToken,
   signRegistrationToken,
   decodeRegistrationToken,
+  decodeAccessToken,
   generateVerificationToken,
   generateResetToken,
 };
