@@ -4,25 +4,27 @@ import Homepage from "./pages/Homepage"
 import Login from "./pages/Login.jsx"
 import Footer from "./components/Footer"
 import House from "./pages/House.jsx"
+import { ToastContainer } from "react-toastify"
 
 const App = () => {
   return (
-    <div className="flex flex-col min-h-screen">
+    
+      <div className="flex flex-col min-h-screen">
+        <ToastContainer/>
+        <Navbar />
 
-      <Navbar />
+        <main className="flex-1 pt-20">
+          <Routes>
+            <Route path="/" element={<Homepage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/house" element={<House />} />
+          </Routes>
+        </main>
 
-      <main className="flex-1 pt-20">
-        <Routes>
-          <Route path="/" element={<Homepage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/house" element={<House />} />
-        </Routes>
-      </main>
-
-      <Footer />
-
-    </div>
-  )
+        <Footer />
+      </div>
+    
+  );
 }
 
 export default App
